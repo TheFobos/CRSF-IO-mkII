@@ -46,18 +46,7 @@ void* crsfGetActive()
 void loop_ch()
 {
   
-  // static uint32_t newTime;
-  // newTime = rpi_millis();
-
-  // ПРОВЕРКА ПОТЕРИ СВЯЗИ (FAILSAFE)
-  // Если от полетника не было НИКАКИХ данных более 1 секунды (1000 мс)
-  // Управление сервоприводами теперь выполняет полетник, поэтому failsafe здесь не нужен
-  // if (newTime - crsf->_lastReceive > 1000)
-  // {
-  //     // Устанавливаем моторы/сервы в безопасное положение
-  // }
-
-  // ОТКЛЮЧЕНО: ПЕРЕКЛЮЧЕНИЕ ПОРТОВ
+   // ОТКЛЮЧЕНО: ПЕРЕКЛЮЧЕНИЕ ПОРТОВ
   // Если от полетника не было НИКАКИХ данных более 30 секунд (30000 мс)
   // И если связь вообще когда-либо была (_lastReceive != 0)
   // И прошло не менее 5 секунд с последнего переключения (стабилизация)
@@ -100,5 +89,19 @@ void crsfInitSend()
   // Для Raspberry Pi используем первичный порт
   crsfPort1.open();
 }
+
+#else
+// Stub implementation when CRSF is disabled
+void* crsfGetActive()
+{
+  return nullptr; // CRSF не инициализирован
+}
+
+void crsfInitRecv() {}
+void crsfInitSend() {}
+void loop_ch() {}
+void crsfSetChannel(unsigned int ch, int value) {}
+void crsfSendChannels() {}
+void crsfTelemetrySend() {}
 
 #endif

@@ -32,7 +32,12 @@ int main() {
   std::thread webServerThread([]() {
     // Ждем инициализации CRSF (уменьшено для реалтайма)
     rpi_delay_ms(500);
-    startTelemetryServer((CrsfSerial*)crsfGetActive(), 8081, 10);
+    void* crsfPtr = crsfGetActive();
+    if (crsfPtr != nullptr) {
+      startTelemetryServer((CrsfSerial*)crsfPtr, 8081, 10);
+    } else {
+      printf("❌ Ошибка: crsfGetActive() вернул nullptr, API не запущен\n");
+    }
   });
   webServerThread.detach();
 
