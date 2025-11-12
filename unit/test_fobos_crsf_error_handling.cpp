@@ -199,19 +199,20 @@ TEST_F(CrsfErrorHandlingTest, ParsePacket_MultipleCorrupted_AllRejected) {
         badPacket[i] = 0xFF;
     }
     
-    InSequence seq;
     // Отправляем несколько поврежденных пакетов
+    // Каждый пакет будет отклонен из-за неверного CRC
     for (int p = 0; p < 5; p++) {
+        InSequence seq;
         for (int i = 0; i < 26; i++) {
             EXPECT_CALL(*mockSerial, readByte(_))
                 .WillOnce(DoAll(::testing::SetArgReferee<0>(badPacket[i]), Return(1)));
         }
+        EXPECT_CALL(*mockSerial, readByte(_))
+            .WillOnce(Return(0)); // Нет больше данных для этого пакета
+        
+        // Все пакеты должны быть отклонены без ошибок
+        EXPECT_NO_THROW(crsf->loop());
     }
-    EXPECT_CALL(*mockSerial, readByte(_))
-        .WillRepeatedly(Return(0));
-    
-    // Все пакеты должны быть отклонены без ошибок
-    EXPECT_NO_THROW(crsf->loop());
 }
 
 /**
@@ -279,8 +280,11 @@ TEST_F(CrsfErrorHandlingTest, QueuePacket_EmptyPayload_HandlesGracefully) {
         crsf->setChannel(i, 1500);
     }
     
+    // packetChannelsSend() вызывает queuePacket() внутри, который вызывает write()
+    // Затем мы вызываем queuePacket() еще раз, так что write() будет вызван дважды
     EXPECT_CALL(*mockSerial, write(_, _))
-        .WillOnce(Return(26));
+        .WillOnce(Return(26))  // Первый вызов от packetChannelsSend()
+        .WillOnce(Return(4));   // Второй вызов от queuePacket() с пустым payload (4 байта)
     
     crsf->packetChannelsSend();
     EXPECT_TRUE(crsf->isLinkUp());
@@ -288,8 +292,9 @@ TEST_F(CrsfErrorHandlingTest, QueuePacket_EmptyPayload_HandlesGracefully) {
     // Отправляем пакет с пустым payload
     uint8_t emptyPayload[0];
     
-    // Минимальный размер payload = 1 байт (TYPE + минимум 1 байт данных + CRC)
-    // Но для теста проверим поведение с нулевым размером
+    // queuePacket с пустым payload создаст пакет размером 4 байта (addr + len + type + crc)
+    // где len = 0 + 2 = 2, так что пакет будет: addr(1) + len(1) + type(1) + crc(1) = 4 байта
+    // queuePacket вызывает write(buf, len + 4), где len=0, так что write будет вызван с 4 байтами
     EXPECT_NO_THROW(crsf->queuePacket(CRSF_ADDRESS_FLIGHT_CONTROLLER, 
                                      CRSF_FRAMETYPE_LINK_STATISTICS, 
                                      emptyPayload, 0));
@@ -308,10 +313,11 @@ TEST_F(CrsfErrorHandlingTest, ErrorHandling_MultipleErrors_SystemStable) {
     EXPECT_NO_THROW(crsf->setChannel(0, 1500)); // Невалидный канал
     EXPECT_NO_THROW(crsf->setChannel(1, -100)); // Невалидное значение
     
-    // Ошибки чтения
+    // Ошибки чтения - readByte может быть вызван несколько раз в loop()
+    // так как loop() читает до 32 байт за раз
     EXPECT_CALL(*mockSerial, readByte(_))
-        .WillOnce(Return(-1))
-        .WillOnce(Return(0));
+        .WillOnce(Return(-1))  // Первая ошибка
+        .WillRepeatedly(Return(0)); // Больше нет данных
     EXPECT_NO_THROW(crsf->loop());
     
     // Поврежденный пакет
@@ -326,6 +332,8 @@ TEST_F(CrsfErrorHandlingTest, ErrorHandling_MultipleErrors_SystemStable) {
     EXPECT_NO_THROW(crsf->loop());
     
     // Система должна оставаться стабильной
+    EXPECT_CALL(*mockSerial, readByte(_))
+        .WillRepeatedly(Return(0));
     EXPECT_NO_THROW(crsf->loop());
 }
 

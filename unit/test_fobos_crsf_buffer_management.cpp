@@ -109,8 +109,10 @@ TEST_F(CrsfBufferManagementTest, BufferManagement_MultiplePackets_AllProcessed) 
     EXPECT_CALL(*mockSerial, readByte(_))
         .WillRepeatedly(Return(0));
     
-    // Обрабатываем пакеты
-    crsf->loop();
+    // Обрабатываем пакеты - нужно вызвать loop() несколько раз,
+    // так как handleSerialIn() читает максимум 32 байта за раз
+    crsf->loop(); // Читает первые 32 байта (первый пакет + 6 байт второго)
+    crsf->loop(); // Читает оставшиеся 20 байт второго пакета
     
     // Оба пакета должны быть обработаны
     EXPECT_TRUE(crsf->isLinkUp());
@@ -159,7 +161,9 @@ TEST_F(CrsfBufferManagementTest, BufferManagement_CorruptedThenValid_ValidProces
     EXPECT_CALL(*mockSerial, readByte(_))
         .WillRepeatedly(Return(0));
     
-    crsf->loop();
+    // Нужно вызвать loop() несколько раз для чтения всех байт
+    crsf->loop(); // Читает первые 32 байта
+    crsf->loop(); // Читает оставшиеся байты
     
     // Валидный пакет должен быть обработан
     EXPECT_TRUE(crsf->isLinkUp());
@@ -189,7 +193,8 @@ TEST_F(CrsfBufferManagementTest, BufferManagement_MaxBufferSize_HandlesCorrectly
     EXPECT_CALL(*mockSerial, readByte(_))
         .WillRepeatedly(Return(0));
     
-    // Не должно быть переполнения буфера
+    // Не должно быть переполнения буфера - вызываем loop() несколько раз
+    EXPECT_NO_THROW(crsf->loop());
     EXPECT_NO_THROW(crsf->loop());
 }
 
@@ -264,7 +269,10 @@ TEST_F(CrsfBufferManagementTest, BufferManagement_MaxLengthPacket_ProcessesCorre
     EXPECT_CALL(*mockSerial, readByte(_))
         .WillRepeatedly(Return(0));
     
-    // Пакет должен быть обработан
+    // Пакет должен быть обработан - вызываем loop() несколько раз для чтения всех байт
     EXPECT_NO_THROW(crsf->loop());
+    if (totalLen > 32) {
+        EXPECT_NO_THROW(crsf->loop());
+    }
 }
 

@@ -29,12 +29,17 @@ void queuePacket(uint8_t addr, uint8_t type, const void* payload, uint8_t len);
 // Return current channel value (1-based) in us
 int getChannel(unsigned int ch) const
 {
-    return _channels[ch - 1];
+    if (ch >= 1 && ch <= CRSF_NUM_CHANNELS) {
+        return _channels[ch - 1];
+    }
+    return 1500; // Safe default value for invalid channel
 }
 
 void setChannel(unsigned int ch, int value)
 {
-    _channels[ch - 1] = value;
+    if (ch >= 1 && ch <= CRSF_NUM_CHANNELS) {
+        _channels[ch - 1] = value;
+    }
     }
 
     const crsfLinkStatistics_t* getLinkStatistics() const { return &_linkStatistics; }

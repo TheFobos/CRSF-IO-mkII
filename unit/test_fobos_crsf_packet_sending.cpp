@@ -25,6 +25,7 @@ using ::testing::_;
 using ::testing::Return;
 using ::testing::SaveArg;
 using ::testing::DoAll;
+using ::testing::Invoke;
 
 /**
  * @class CrsfPacketSendingTest
@@ -167,9 +168,11 @@ TEST_F(CrsfPacketSendingTest, QueuePacket_ValidPacket_HasCorrectFormat) {
     size_t capturedLen = 0;
     
     EXPECT_CALL(*mockSerial, write(_, _))
-        .WillOnce(DoAll(SaveArg<0>(capturedPacket), 
-                        SaveArg<1>(&capturedLen),
-                        Return(14)));
+        .WillOnce(Invoke([&capturedPacket, &capturedLen](const uint8_t* buf, size_t len) {
+            memcpy(capturedPacket, buf, len < 64 ? len : 64);
+            capturedLen = len;
+            return static_cast<int>(len);
+        }));
     
     crsf->queuePacket(CRSF_ADDRESS_FLIGHT_CONTROLLER, 
                      CRSF_FRAMETYPE_LINK_STATISTICS, 
@@ -206,9 +209,11 @@ TEST_F(CrsfPacketSendingTest, PacketChannelsSend_ChannelValues_EncodesCorrectly)
     size_t capturedLen = 0;
     
     EXPECT_CALL(*mockSerial, write(_, _))
-        .WillOnce(DoAll(SaveArg<0>(capturedPacket), 
-                        SaveArg<1>(&capturedLen),
-                        Return(26)));
+        .WillOnce(Invoke([&capturedPacket, &capturedLen](const uint8_t* buf, size_t len) {
+            memcpy(capturedPacket, buf, len < 64 ? len : 64);
+            capturedLen = len;
+            return static_cast<int>(len);
+        }));
     
     crsf->packetChannelsSend();
     
@@ -309,7 +314,10 @@ TEST_F(CrsfPacketSendingTest, QueuePacket_ValidPacket_IncludesCrc) {
     uint8_t capturedPacket[64];
     
     EXPECT_CALL(*mockSerial, write(_, _))
-        .WillOnce(DoAll(SaveArg<0>(capturedPacket), Return(14)));
+        .WillOnce(Invoke([&capturedPacket](const uint8_t* buf, size_t len) {
+            memcpy(capturedPacket, buf, len < 64 ? len : 64);
+            return static_cast<int>(len);
+        }));
     
     crsf->queuePacket(CRSF_ADDRESS_FLIGHT_CONTROLLER, 
                      CRSF_FRAMETYPE_LINK_STATISTICS, 

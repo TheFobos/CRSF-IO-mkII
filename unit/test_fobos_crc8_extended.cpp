@@ -56,12 +56,6 @@ TEST(Crc8ExtendedTest, Calculate_Incremental_ReturnsSameResult) {
     uint8_t fullData[] = {0x01, 0x02, 0x03, 0x04, 0x05};
     uint8_t fullCrc = crc.calc(fullData, 5);
     
-    // Вычисляем CRC инкрементально
-    uint8_t partial1[] = {0x01, 0x02};
-    uint8_t crc1 = crc.calc(partial1, 2);
-    uint8_t partial2[] = {0x03, 0x04, 0x05};
-    uint8_t crc2 = crc.calc(partial2, 3);
-    
     // Примечание: для инкрементального CRC нужно использовать
     // предыдущий CRC как начальное значение, но текущая реализация
     // всегда начинает с 0. Поэтому проверяем, что полный CRC

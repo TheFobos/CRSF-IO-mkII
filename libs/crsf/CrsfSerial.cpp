@@ -196,13 +196,25 @@ void CrsfSerial::packetLinkStatistics(const crsf_header_t* p)
 
 void CrsfSerial::packetGps(const crsf_header_t* p)
 {
-    const crsf_sensor_gps_t* gps = (crsf_sensor_gps_t*)p->data;
-    _gpsSensor.latitude = be32toh(gps->latitude);
-    _gpsSensor.longitude = be32toh(gps->longitude);
-    _gpsSensor.groundspeed = be16toh(gps->groundspeed);
-    _gpsSensor.heading = be16toh(gps->heading);
-    _gpsSensor.altitude = be16toh(gps->altitude);
-    _gpsSensor.satellites = gps->satellites;
+    // Read bytes manually to handle big-endian conversion correctly
+    // Packet data is big-endian, so we construct the value directly from bytes
+    const uint8_t* data = p->data;
+    // Read int32_t as big-endian bytes: construct value directly
+    int32_t lat = ((int32_t)((uint32_t)data[0] << 24) | 
+                   ((uint32_t)data[1] << 16) | 
+                   ((uint32_t)data[2] << 8) | 
+                   (uint32_t)data[3]);
+    int32_t lon = ((int32_t)((uint32_t)data[4] << 24) | 
+                   ((uint32_t)data[5] << 16) | 
+                   ((uint32_t)data[6] << 8) | 
+                   (uint32_t)data[7]);
+    _gpsSensor.latitude = lat;
+    _gpsSensor.longitude = lon;
+    // Read uint16_t as big-endian bytes
+    _gpsSensor.groundspeed = ((uint16_t)data[8] << 8) | (uint16_t)data[9];
+    _gpsSensor.heading = ((uint16_t)data[10] << 8) | (uint16_t)data[11];
+    _gpsSensor.altitude = ((uint16_t)data[12] << 8) | (uint16_t)data[13];
+    _gpsSensor.satellites = data[14];
 
     //БЕСПОЛЕЗНО: указатель onPacketGps никогда не устанавливается
     //if (onPacketGps)
@@ -275,6 +287,8 @@ void CrsfSerial::packetChannelsSend()
         int usTarget = _channels[i];
         if (usTarget < 1000) usTarget = 1000;
         if (usTarget > 2000) usTarget = 2000;
+        // Clamp the stored value as well
+        _channels[i] = usTarget;
 
         // Первичное кодирование (округление к ближайшему)
         int num = (usTarget - 1000) * crsfDelta;

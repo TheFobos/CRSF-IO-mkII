@@ -37,23 +37,15 @@ TEST_OBJ := $(TEST_SRC:.cpp=.o)
 LIB_OBJ := $(patsubst ../libs/crsf/%.cpp,libs/crsf/%.o,$(filter ../libs/crsf/%.cpp,$(LIB_SRC))) \
            $(patsubst ../libs/%.cpp,libs/%.o,$(filter ../libs/%.cpp,$(filter-out ../libs/crsf/%.cpp,$(LIB_SRC))))
 
-# Исполняемый файл тестов (старый)
+# Исполняемый файл тестов
 TEST_BIN := test_runner
 
-# Консольное приложение для тестов
-CONSOLE_BIN := test_runner_console
-
 # Цель по умолчанию
-all: $(TEST_BIN) $(CONSOLE_BIN)
+all: $(TEST_BIN)
 
-# Сборка старых тестов
+# Сборка тестов
 $(TEST_BIN): $(TEST_OBJ) $(LIB_OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
-
-# Сборка консольного приложения (без -lgtest_main, используем свой main)
-CONSOLE_OBJ := $(filter-out test_main.o,$(TEST_OBJ)) test_runner_console.o
-$(CONSOLE_BIN): $(CONSOLE_OBJ) $(LIB_OBJ)
-	$(CXX) $(CXXFLAGS) -o $@ $^ -lgtest -lgmock -lpthread
 
 # Правило компиляции объектных файлов тестов
 %.o: %.cpp
@@ -76,13 +68,9 @@ libs/%.o: ../libs/%.cpp
 	@echo "Compiling library: $< -> $@"
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Запуск тестов (старый способ)
+# Запуск тестов
 test: $(TEST_BIN)
 	./$(TEST_BIN)
-
-# Запуск тестов через консольное приложение
-test-console: $(CONSOLE_BIN)
-	./$(CONSOLE_BIN)
 
 # Принудительная пересборка библиотек (полезно после изменений в ../libs/)
 rebuild-libs:
@@ -92,8 +80,8 @@ rebuild-libs:
 
 # Очистка артефактов сборки
 clean:
-	rm -f $(TEST_OBJ) $(LIB_OBJ) $(TEST_BIN) $(CONSOLE_BIN) test_runner_console.o
+	rm -f $(TEST_OBJ) $(LIB_OBJ) $(TEST_BIN)
 	rm -rf libs
 
-.PHONY: all test test-console clean rebuild-libs
+.PHONY: all test clean rebuild-libs
 

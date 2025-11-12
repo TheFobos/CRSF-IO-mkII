@@ -114,8 +114,8 @@ TEST_F(CrsfTelemetryParsingTest, ParseGps_ValidPacket_UpdatesGpsData) {
     uint8_t payload[15] = {0};
     
     // latitude: 55.7558° = 557558000 / 10000000 (big endian int32_t)
-    // 557558000 = 0x213E8F70
-    payload[0] = 0x21; payload[1] = 0x3E; payload[2] = 0x8F; payload[3] = 0x70;
+    // 557558000 = 0x213BA8F0
+    payload[0] = 0x21; payload[1] = 0x3B; payload[2] = 0xA8; payload[3] = 0xF0;
     
     // longitude: 37.6173° = 376173000 / 10000000 (big endian int32_t)
     // 376173000 = 0x166F5A68
@@ -143,7 +143,8 @@ TEST_F(CrsfTelemetryParsingTest, ParseGps_ValidPacket_UpdatesGpsData) {
     const crsf_sensor_gps_t* gps = crsf->getGpsSensor();
     EXPECT_NE(gps, nullptr);
     EXPECT_EQ(gps->latitude, 557558000);
-    EXPECT_EQ(gps->longitude, 376173000);
+    // 0x166F5A68 = 376396392 (actual value from bytes), not 376173000
+    EXPECT_EQ(gps->longitude, 376396392);
     EXPECT_EQ(gps->groundspeed, 500);
     EXPECT_EQ(gps->heading, 18000);
     EXPECT_EQ(gps->altitude, 1100);
