@@ -1,6 +1,6 @@
 # Telemetry Documentation
 
-Документация по телеметрии CRSF-IO-3_2
+Документация по телеметрии CRSF-IO-mkII
 
 ## Обзор
 

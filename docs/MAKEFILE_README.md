@@ -1,6 +1,6 @@
 # Build Guide
 
-Руководство по сборке проекта CRSF-IO-3_2
+Руководство по сборке проекта CRSF-IO-mkII
 
 ## Требования
 
@@ -82,7 +82,7 @@ LDFLAGS = -lpthread                 # Библиотеки
 ## Структура проекта
 
 ```
-CRSF-IO-3_2/
+CRSF-IO-mkII/
 ├── main.cpp
 ├── Makefile
 ├── config.h

@@ -11,20 +11,18 @@ class SerialPort {
 public:
     // Конструктор: path — например "/dev/ttyAMA0" или "/dev/ttyS0"
     SerialPort(const std::string &path, uint32_t baud);
-    ~SerialPort();
+    virtual ~SerialPort();
 
     bool isOpen() const { return _fd >= 0; }
-    bool open();
-    void close();
+    virtual bool open();
+    virtual void close();
 
     // Неблокирующее чтение/запись (по умолчанию блокирующее с таймаутами через termios)
-    int readByte(uint8_t &b);
-    //БЕСПОЛЕЗНО: функция определена, но нигде не используется (используется только readByte)
-    //int read(uint8_t *buf, size_t len);
-    int write(const uint8_t *buf, size_t len);
-    int writeByte(uint8_t b);
+    virtual int readByte(uint8_t &b);
+    virtual int write(const uint8_t *buf, size_t len);
+    virtual int writeByte(uint8_t b);
 
-    void flush();
+    virtual void flush();
 
 private:
     std::string _path;

@@ -1,6 +1,6 @@
 # API Documentation
 
-API CRSF-IO-3_2 для управления и получения телеметрии
+API CRSF-IO-mkII для управления и получения телеметрии
 
 ## Endpoints
 
