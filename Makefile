@@ -2,6 +2,7 @@ CXX := g++
 CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -Wpedantic -I.
 LDFLAGS := -lpthread
 
+# Исходные файлы
 SRC := \
 	main.cpp \
 	crsf/crsf.cpp \
@@ -12,24 +13,24 @@ SRC := \
 	libs/joystick.cpp \
 	telemetry_server.cpp
 
+# Объектные файлы
 OBJ := $(SRC:.cpp=.o)
 
-BIN := crsf_io_rpi uart_test
+# Исполняемый файл
+BIN := crsf_io_rpi
 
+# Цель по умолчанию
 all: $(BIN)
 
-crsf_io_rpi: $(OBJ)
+# Сборка основного приложения
+$(BIN): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-UART_TEST_SRC := uart_test.cpp libs/SerialPort.cpp
-UART_TEST_OBJ := $(UART_TEST_SRC:.cpp=.o)
-
-uart_test: $(UART_TEST_OBJ)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
-
+# Правило компиляции объектных файлов
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+# Очистка артефактов сборки
 clean:
 	rm -f $(OBJ) $(BIN)
 

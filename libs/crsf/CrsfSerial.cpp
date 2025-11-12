@@ -1,45 +1,11 @@
 #include "CrsfSerial.h"
 #include <cstring>
-#include "../log.h"
-#include "../../telemetry_server.h"
 
-// extern SoftwareSerial softSerial;
-
-// static void hexdump(void *p, size_t len)
-// {
-//     char *data = (char *)p;
-//     while (len > 0)
-//     {
-//         uint8_t linepos = 0;
-//         char* linestart = data;
-//         // Binary part
-//         while (len > 0 && linepos < 16)
-//         {
-//             if (*data < 0x0f)
-//             Serial.write('0');
-//             Serial.print(*data, HEX);
-//             Serial.write(' ');
-//             ++data;
-//             ++linepos;
-//             --len;
-//         }
-
-//         // Spacer to align last line
-//         for (uint8_t i = linepos; i < 16; ++i)
-//             Serial.print("   ");
-
-//         // ASCII part
-//         for (uint8_t i = 0; i < linepos; ++i)
-//             Serial.write((linestart[i] < ' ') ? '.' : linestart[i]);
-//         Serial.println();
-//     }
-// }
 
 // Конструктор под Raspberry Pi: SerialPort уже открыт с нужной скоростью
 CrsfSerial::CrsfSerial(SerialPort& port, uint32_t baud) :
     _port(port), _crc(0xd5), _baud(baud),
     _lastReceive(0), _lastChannelsPacket(0), _linkIsUp(false),
-    _passthroughMode(false),
     _batteryVoltage(0.0), _batteryCurrent(0.0), _batteryCapacity(0.0), _batteryRemaining(0),
     _attitudeRoll(0.0), _attitudePitch(0.0), _attitudeYaw(0.0),
     _rawAttitudeBytes{0, 0, 0}
@@ -64,13 +30,6 @@ void CrsfSerial::handleSerialIn()
         }
 
         _lastReceive = rpi_millis();
-
-        if (_passthroughMode) {
-            if (onShiftyByte)
-                onShiftyByte(b);
-            continue;
-        }
-
         _rxBuf[_rxBufPos++] = b;
         handleByteReceived();
 
@@ -172,8 +131,9 @@ void CrsfSerial::shiftRxBuffer(uint8_t cnt)
         return;
     }
 
-    if (cnt == 1 && onShiftyByte)
-        onShiftyByte(_rxBuf[0]);
+    //БЕСПОЛЕЗНО: указатель onShiftyByte никогда не устанавливается
+    //if (cnt == 1 && onShiftyByte)
+    //    onShiftyByte(_rxBuf[0]);
 
     // Otherwise do the slow shift down
     uint8_t* src = &_rxBuf[cnt];
@@ -219,6 +179,7 @@ void CrsfSerial::packetChannelsPacked(const crsf_header_t* p)
     _linkIsUp = true;
     _lastChannelsPacket = rpi_millis();
 
+    //БЕСПОЛЕЗНО: onPacketChannels никогда не устанавливается, так как packetChannels удалена
     if (onPacketChannels)
         onPacketChannels();
 }
@@ -228,8 +189,9 @@ void CrsfSerial::packetLinkStatistics(const crsf_header_t* p)
     const crsfLinkStatistics_t* link = (crsfLinkStatistics_t*)p->data;
     memcpy(&_linkStatistics, link, sizeof(_linkStatistics));
 
-    if (onPacketLinkStatistics)
-        onPacketLinkStatistics(&_linkStatistics);
+    //БЕСПОЛЕЗНО: указатель onPacketLinkStatistics никогда не устанавливается
+    //if (onPacketLinkStatistics)
+    //    onPacketLinkStatistics(&_linkStatistics);
 }
 
 void CrsfSerial::packetGps(const crsf_header_t* p)
@@ -242,8 +204,9 @@ void CrsfSerial::packetGps(const crsf_header_t* p)
     _gpsSensor.altitude = be16toh(gps->altitude);
     _gpsSensor.satellites = gps->satellites;
 
-    if (onPacketGps)
-        onPacketGps(&_gpsSensor);
+    //БЕСПОЛЕЗНО: указатель onPacketGps никогда не устанавливается
+    //if (onPacketGps)
+    //    onPacketGps(&_gpsSensor);
 }
 
 void CrsfSerial::write(uint8_t b)
@@ -260,11 +223,10 @@ void CrsfSerial::queuePacket(uint8_t addr, uint8_t type, const void* payload, ui
 {
     if (!_linkIsUp)
         return;
-    if (_passthroughMode)
-        return;
     if (len > CRSF_MAX_PAYLOAD_LEN)
         return;
 
+    //БЕСПОЛЕЗНО: устаревший Arduino код - закомментированные строки отладки
     // uint8_t* t = (uint8_t*)payload;
     // for (int i = 0; i < 22; i++) {
     //     t[i] = i;
@@ -290,15 +252,19 @@ void CrsfSerial::queuePacket(uint8_t addr, uint8_t type, const void* payload, ui
     //     }
     // }
     write(buf, len + 4);
+    //БЕСПОЛЕЗНО: закомментированный лог
     // log_info("CRSF: отправлен пакет типа " + std::to_string(type));
 }
 
+//БЕСПОЛЕЗНО: функция определена, но нигде не вызывается
+/*
 void CrsfSerial::setPassthroughMode(bool val, unsigned int baud)
 {
     _passthroughMode = val;
     // На Raspberry Pi не перенастраиваем порт здесь; просто очищаем буфер
     _port.flush();
 }
+*/
 
 void CrsfSerial::packetChannelsSend()
 {
@@ -352,7 +318,6 @@ void CrsfSerial::packetChannelsSend()
 
 
     _linkIsUp = true;
-    _passthroughMode = false;
     queuePacket(CRSF_ADDRESS_FLIGHT_CONTROLLER, CRSF_FRAMETYPE_RC_CHANNELS_PACKED, (void*)&ch, 22);
 }
 

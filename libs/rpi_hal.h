@@ -8,7 +8,8 @@
 
 // Время
 uint32_t rpi_millis();        // миллисекунды с момента запуска процесса
-uint32_t rpi_micros();        // микросекунды с момента запуска процесса
+//БЕСПОЛЕЗНО: функция определена, но нигде не используется
+//uint32_t rpi_micros();
 void rpi_delay_ms(uint32_t);  // пауза в миллисекундах
 
 // GPIO режимы
@@ -21,7 +22,8 @@ using RpiPin = int;
 bool rpi_gpio_export(RpiPin pin);
 bool rpi_gpio_set_mode(RpiPin pin, RpiGpioMode mode);
 bool rpi_gpio_write(RpiPin pin, bool high);
-bool rpi_gpio_read(RpiPin pin, bool &high);
+//БЕСПОЛЕЗНО: функция определена, но нигде не используется
+//bool rpi_gpio_read(RpiPin pin, bool &high);
 
 // Простой PWM через sysfs pwmchip интерфейс
 // Внимание: на Raspberry Pi 5 доступность pwmchip зависит от оверлеев ядра.

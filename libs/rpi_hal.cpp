@@ -17,12 +17,15 @@ uint32_t rpi_millis() {
     return static_cast<uint32_t>(ms & 0xFFFFFFFFu);
 }
 
+//БЕСПОЛЕЗНО: функция определена, но нигде не используется
+/*
 uint32_t rpi_micros() {
     // Возвращает микросекунды с момента запуска процесса
     auto now = ClockSteady::now();
     auto us = std::chrono::duration_cast<std::chrono::microseconds>(now - processStartTime).count();
     return static_cast<uint32_t>(us & 0xFFFFFFFFu);
 }
+*/
 
 void rpi_delay_ms(uint32_t ms) {
     // Простаивает текущий поток на указанное количество миллисекунд
@@ -84,6 +87,8 @@ bool rpi_gpio_write(RpiPin pin, bool high) {
     return rpi_write_text_file(sysfs_gpio_path(pin, "value"), high ? "1" : "0");
 }
 
+//БЕСПОЛЕЗНО: функция определена, но нигде не используется
+/*
 bool rpi_gpio_read(RpiPin pin, bool &high) {
     // Читаем уровень из пина
     if (!rpi_gpio_export(pin)) return false;
@@ -92,6 +97,7 @@ bool rpi_gpio_read(RpiPin pin, bool &high) {
     high = (!s.empty() && s[0] == '1');
     return true;
 }
+*/
 
 // PWM через sysfs pwmchip
 static inline std::string sysfs_pwm_path(const RpiPwmChannel &ch, const char *entry) {

@@ -10,22 +10,13 @@
 // Полная замена Arduino setup()/loop()
 int main() {
 #if USE_CRSF_RECV == true
-#if DEVICE_2 == true
-  PWMinit();      // Инициализация PWM для сервоприводов
-#elif DEVICE_1 == true
-  analogInit();   // Инициализация режимов GPIO/PWM для Н-моста
-#endif
-#endif
-#if USE_CRSF_RECV == true
   crsfInitRecv(); // Запуск CRSF приёма
 #endif
 #if USE_CRSF_SEND == true
   crsfInitSend(); // Запуск CRSF передачи
 #endif
-#if PIN_INIT == true
-  pinInit();      // Инициализация пинов реле/камеры
-#endif
 
+  //БЕСПОЛЕЗНО: устаревший Arduino код - закомментированная неиспользуемая переменная
   // флаг доступности (не используется, можно удалить/раскомментировать при необходимости)
   // bool isCan = true;
   const uint32_t crsfSendPeriodMs = 10; // ~100 Гц отправка каналов для реалтайма
@@ -94,6 +85,7 @@ int main() {
 
 
 #endif
+    //БЕСПОЛЕЗНО: закомментированный код
     // Реалтайм без задержек - максимальная скорость обработки
     // rpi_delay_ms(0); // Полностью убираем задержку для реалтайма
   }

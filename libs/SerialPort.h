@@ -19,7 +19,8 @@ public:
 
     // Неблокирующее чтение/запись (по умолчанию блокирующее с таймаутами через termios)
     int readByte(uint8_t &b);
-    int read(uint8_t *buf, size_t len);
+    //БЕСПОЛЕЗНО: функция определена, но нигде не используется (используется только readByte)
+    //int read(uint8_t *buf, size_t len);
     int write(const uint8_t *buf, size_t len);
     int writeByte(uint8_t b);
 

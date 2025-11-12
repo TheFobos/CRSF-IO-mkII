@@ -7,7 +7,8 @@
 #include "../SerialPort.h"
 #include "../rpi_hal.h"
 
-enum eFailsafeAction { fsaNoPulses, fsaHold };
+//БЕСПОЛЕЗНО: enum определен, но нигде не используется
+//enum eFailsafeAction { fsaNoPulses, fsaHold };
 
 // Реализация CRSF поверх SerialPort (Raspberry Pi)
 class CrsfSerial
@@ -57,16 +58,18 @@ void setChannel(unsigned int ch, int value)
     int16_t getRawAttitudeYaw() const { return _rawAttitudeBytes[2]; }
     
     bool isLinkUp() const { return _linkIsUp; }
-    bool getPassthroughMode() const { return _passthroughMode; }
-    void setPassthroughMode(bool val, unsigned int baud = 0);
+    //БЕСПОЛЕЗНО: функции определены, но нигде не вызываются
+    //bool getPassthroughMode() const { return _passthroughMode; }
+    //void setPassthroughMode(bool val, unsigned int baud = 0);
 
     // Event Handlers
     void (*onLinkUp)();
     void (*onLinkDown)();
     void (*onPacketChannels)();
-    void (*onShiftyByte)(uint8_t b);
-    void (*onPacketLinkStatistics)(crsfLinkStatistics_t* ls);
-    void (*onPacketGps)(crsf_sensor_gps_t* gpsSensor);
+    //БЕСПОЛЕЗНО: указатели на функции устанавливаются, но никогда не вызываются
+    //void (*onShiftyByte)(uint8_t b);
+    //void (*onPacketLinkStatistics)(crsfLinkStatistics_t* ls);
+    //void (*onPacketGps)(crsf_sensor_gps_t* gpsSensor);
 
     void packetChannelsSend();
     void packetAttitude(const crsf_header_t* p);
@@ -97,7 +100,6 @@ private:
     uint32_t _baud;
     uint32_t _lastChannelsPacket;
     bool _linkIsUp;
-    bool _passthroughMode;
     int _channels[CRSF_NUM_CHANNELS];
 
     void handleSerialIn();

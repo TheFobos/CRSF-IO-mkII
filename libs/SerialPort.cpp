@@ -72,9 +72,12 @@ int SerialPort::readByte(uint8_t &b) {
     return r;
 }
 
+//БЕСПОЛЕЗНО: функция определена, но нигде не используется (используется только readByte)
+/*
 int SerialPort::read(uint8_t *buf, size_t len) {
     return ::read(_fd, buf, len);
 }
+*/
 
 int SerialPort::write(const uint8_t *buf, size_t len) {
     return ::write(_fd, buf, len);

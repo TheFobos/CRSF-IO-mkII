@@ -3,14 +3,11 @@
 #include <mutex>
 #include <chrono>
 #include <sstream>
-#include <fstream>
 #include <iomanip>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <cstring>
-#include <cstdlib>
-#include "crsf/crsf.h"
 #include "libs/crsf/CrsfSerial.h"
 
 // Глобальные переменные для телеметрии

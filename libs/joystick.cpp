@@ -1,5 +1,4 @@
 #include "joystick.h"
-
 #include <linux/joystick.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -26,6 +25,8 @@ bool js_open(const char* path)
     return true;
 }
 
+//БЕСПОЛЕЗНО: функция определена, но нигде не вызывается
+/*
 void js_close()
 {
     if (g_fd >= 0) {
@@ -35,6 +36,7 @@ void js_close()
     g_axes.clear();
     g_buttons.clear();
 }
+*/
 
 static void ensure_axis_size(size_t idx)
 {
