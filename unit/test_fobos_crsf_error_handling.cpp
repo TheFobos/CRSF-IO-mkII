@@ -9,7 +9,7 @@
  * - Ошибки последовательного порта
  * - Граничные случаи
  * 
- * @version CRSF-IO-mkII
+ * @version 4.3
  */
 
 #include <gtest/gtest.h>

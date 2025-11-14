@@ -11,7 +11,7 @@
  * - Flight Mode
  * - Невалидные пакеты (неверный CRC, длина, адрес)
  * 
- * @version CRSF-IO-mkII
+ * @version 4.3
  */
 
 #include <gtest/gtest.h>

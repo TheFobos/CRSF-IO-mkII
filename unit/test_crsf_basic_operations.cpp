@@ -9,7 +9,7 @@
  * 
  * Используется MockSerialPort для изоляции тестов от реального оборудования.
  * 
- * @version CRSF-IO-mkII
+ * @version 4.3
  */
 
 #include <gtest/gtest.h>

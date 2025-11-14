@@ -8,7 +8,7 @@
  * - Таймаут и очистка буфера
  * - Несколько пакетов в буфере
  * 
- * @version CRSF-IO-mkII
+ * @version 4.3
  */
 
 #include <gtest/gtest.h>

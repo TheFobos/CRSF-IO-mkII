@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 """
 CRSF Realtime Interface
-Интерфейс для отображения данных CRSF API в реальном времени
+Интерфейс для отображения данных CRSF в реальном времени через Python обертку
 """
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import requests
-import json
 import threading
 import time
 from datetime import datetime
 import queue
+import sys
+import os
+
+# Добавляем путь к pybind для импорта обертки
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pybind'))
+from crsf_wrapper import CRSFWrapper
 
 class CRSFRealtimeInterface:
     def __init__(self, root):
@@ -21,10 +25,16 @@ class CRSFRealtimeInterface:
         self.root.configure(bg='#2b2b2b')
         
         # Настройки
-        self.api_url = "http://localhost:8081"  # Исправляем порт
         self.update_interval = 20  # Уменьшаем до 20мс для реалтайма
         self.is_running = False
         self.data_queue = queue.Queue()
+        
+        # CRSF обертка
+        self.crsf = CRSFWrapper()
+        try:
+            self.crsf.auto_init()
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось инициализировать CRSF: {e}\n\nУбедитесь, что:\n1. CRSF модуль скомпилирован\n2. Основное приложение запущено")
         
         # Данные
         self.current_data = None
@@ -72,34 +82,28 @@ class CRSFRealtimeInterface:
         control_frame = ttk.LabelFrame(parent, text="Управление", padding="10")
         control_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
-        # URL API
-        ttk.Label(control_frame, text="API URL:").grid(row=0, column=0, sticky=tk.W)
-        self.url_var = tk.StringVar(value=self.api_url)
-        url_entry = ttk.Entry(control_frame, textvariable=self.url_var, width=30)
-        url_entry.grid(row=0, column=1, padx=(5, 10))
-        
         # Интервал обновления
-        ttk.Label(control_frame, text="Интервал (мс):").grid(row=0, column=2, sticky=tk.W)
+        ttk.Label(control_frame, text="Интервал (мс):").grid(row=0, column=0, sticky=tk.W)
         self.interval_var = tk.StringVar(value=str(self.update_interval))
         interval_entry = ttk.Entry(control_frame, textvariable=self.interval_var, width=10)
-        interval_entry.grid(row=0, column=3, padx=(5, 10))
+        interval_entry.grid(row=0, column=1, padx=(5, 10))
         
         # Кнопки
         self.start_button = ttk.Button(control_frame, text="Старт", command=self.start_monitoring)
-        self.start_button.grid(row=0, column=4, padx=(5, 5))
+        self.start_button.grid(row=0, column=2, padx=(5, 5))
         
         self.stop_button = ttk.Button(control_frame, text="Стоп", command=self.stop_monitoring, state='disabled')
-        self.stop_button.grid(row=0, column=5, padx=(5, 5))
+        self.stop_button.grid(row=0, column=3, padx=(5, 5))
         
         # Режим работы
-        ttk.Label(control_frame, text="Режим:").grid(row=1, column=0, sticky=tk.W, pady=(10, 0))
-        self.mode_var = tk.StringVar(value="joystick")
+        ttk.Label(control_frame, text="Режим:").grid(row=0, column=4, sticky=tk.W, padx=(20, 5))
+        self.mode_var = tk.StringVar(value="manual")  # По умолчанию ручной режим
         mode_combo = ttk.Combobox(control_frame, textvariable=self.mode_var, 
                                  values=["joystick", "manual"], width=15)
-        mode_combo.grid(row=1, column=1, padx=(5, 10), pady=(10, 0))
+        mode_combo.grid(row=0, column=5, padx=(5, 10))
         
         mode_button = ttk.Button(control_frame, text="Установить режим", command=self.set_mode)
-        mode_button.grid(row=1, column=2, padx=(5, 5), pady=(10, 0))
+        mode_button.grid(row=0, column=6, padx=(5, 5))
     
     def create_status_panel(self, parent):
         """Панель статуса"""
@@ -136,16 +140,6 @@ class CRSFRealtimeInterface:
         ttk.Label(data_frame, text="Режим работы:").grid(row=0, column=2, sticky=tk.W, padx=(20, 0))
         self.work_mode_label = ttk.Label(data_frame, text="Неизвестно")
         self.work_mode_label.grid(row=0, column=3, sticky=tk.W, padx=(10, 0))
-        
-        # Авто режим
-        ttk.Label(data_frame, text="Авто режим:").grid(row=1, column=0, sticky=tk.W)
-        self.auto_mode_label = ttk.Label(data_frame, text="Выключен")
-        self.auto_mode_label.grid(row=1, column=1, sticky=tk.W, padx=(10, 0))
-        
-        # Авто шаг
-        ttk.Label(data_frame, text="Авто шаг:").grid(row=1, column=2, sticky=tk.W, padx=(20, 0))
-        self.auto_step_label = ttk.Label(data_frame, text="0")
-        self.auto_step_label.grid(row=1, column=3, sticky=tk.W, padx=(10, 0))
     
     def create_channels_panel(self, parent):
         """Панель каналов"""
@@ -502,33 +496,51 @@ class CRSFRealtimeInterface:
             scale.set(2000.0)
     
     def apply_all_channels(self):
-        """Применить все каналы"""
-        for ch_num in range(16):
-            var = self.manual_channel_vars[ch_num]
-            try:
-                value = int(var.get())
-                if 1000 <= value <= 2000:
-                    self.send_channel_command(ch_num + 1, value)
-                    time.sleep(0.01)  # Небольшая задержка между командами
-            except ValueError:
-                messagebox.showerror("Ошибка", f"Неверное значение для канала {ch_num + 1}")
+        """Применить все каналы одновременно"""
+        try:
+            if not self.crsf.is_initialized:
+                messagebox.showerror("Ошибка", "CRSF не инициализирован")
                 return
+            
+            # Собираем все значения каналов
+            channels = []
+            for ch_num in range(16):
+                var = self.manual_channel_vars[ch_num]
+                try:
+                    value = int(var.get())
+                    if 1000 <= value <= 2000:
+                        channels.append(value)
+                    else:
+                        messagebox.showerror("Ошибка", f"Неверное значение для канала {ch_num + 1}: {value}")
+                        return
+                except ValueError:
+                    messagebox.showerror("Ошибка", f"Неверное значение для канала {ch_num + 1}")
+                    return
+            
+            # Устанавливаем все каналы одной командой
+            self.crsf.set_channels(channels)
+            
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Ошибка установки каналов: {e}")
     
     def send_channel_command(self, ch_num, value):
-        """Отправить команду установки канала через API"""
+        """Отправить команду установки канала через обертку"""
         try:
-            url = f"{self.api_url}/api/command?cmd=setChannel&value={ch_num}={value}"
-            response = requests.get(url, timeout=2)
-            if response.status_code != 200:
-                messagebox.showerror("Ошибка", f"Не удалось установить канал {ch_num}: {response.status_code}")
+            if not self.crsf.is_initialized:
+                messagebox.showerror("Ошибка", "CRSF не инициализирован")
+                return
+            self.crsf.set_channel(ch_num, value)
         except Exception as e:
-            messagebox.showerror("Ошибка", f"Ошибка отправки команды: {e}")
+            messagebox.showerror("Ошибка", f"Ошибка установки канала {ch_num}: {e}")
     
     def start_monitoring(self):
         """Запуск мониторинга"""
         try:
             self.update_interval = int(self.interval_var.get())
-            self.api_url = self.url_var.get()
+            
+            if not self.crsf.is_initialized:
+                messagebox.showerror("Ошибка", "CRSF не инициализирован. Перезапустите приложение.")
+                return
             
             self.is_running = True
             self.start_button.config(state='disabled')
@@ -552,27 +564,23 @@ class CRSFRealtimeInterface:
     
     def set_mode(self):
         """Установка режима работы"""
-        if not self.is_running:
-            messagebox.showwarning("Предупреждение", "Сначала запустите мониторинг")
+        if not self.crsf.is_initialized:
+            messagebox.showerror("Ошибка", "CRSF не инициализирован")
             return
         
         mode = self.mode_var.get()
         try:
-            response = requests.get(f"{self.api_url}/api/command?cmd=setMode&value={mode}", timeout=5)
-            if response.status_code == 200:
-                messagebox.showinfo("Успех", f"Режим установлен: {mode}")
-            else:
-                messagebox.showerror("Ошибка", f"Не удалось установить режим: {response.status_code}")
+            self.crsf.set_work_mode(mode)
+            messagebox.showinfo("Успех", f"Режим установлен: {mode}")
         except Exception as e:
-            messagebox.showerror("Ошибка", f"Ошибка подключения: {e}")
+            messagebox.showerror("Ошибка", f"Ошибка установки режима: {e}")
     
     def data_update_worker(self):
         """Поток обновления данных"""
         while self.is_running:
             try:
-                response = requests.get(f"{self.api_url}/api/telemetry", timeout=2)
-                if response.status_code == 200:
-                    data = response.json()
+                if self.crsf.is_initialized:
+                    data = self.crsf.get_telemetry()
                     self.data_queue.put(data)
                 else:
                     self.data_queue.put(None)  # Ошибка

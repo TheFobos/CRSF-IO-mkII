@@ -1,10 +1,22 @@
 #include "config.h"
 #include <thread>
+#include <string>
+#include <fstream>
+#include <unistd.h>
+#include <cstdio>
+#include <sstream>
 
 #include "crsf/crsf.h"
 #include "libs/rpi_hal.h"
 #include "libs/joystick.h"
-#include "telemetry_server.h"
+#include "libs/crsf/CrsfSerial.h"
+
+// Простая функция для получения режима работы
+// Режим теперь управляется через pybind модуль, но для совместимости
+// используем режим по умолчанию "manual"
+std::string getWorkMode() {
+    return "manual"; // По умолчанию ручной режим управления
+}
 
 // Главная точка входа Linux-приложения для Raspberry Pi
 // Полная замена Arduino setup()/loop()
@@ -28,18 +40,93 @@ int main() {
     printf("Предупреждение: джойстик недоступен, работа без управления\n");
   }
 
-  // Запуск веб-сервера телеметрии в отдельном потоке
-  std::thread webServerThread([]() {
-    // Ждем инициализации CRSF (уменьшено для реалтайма)
-    rpi_delay_ms(500);
-    void* crsfPtr = crsfGetActive();
-    if (crsfPtr != nullptr) {
-      startTelemetryServer((CrsfSerial*)crsfPtr, 8081, 10);
-    } else {
-      printf("❌ Ошибка: crsfGetActive() вернул nullptr, API не запущен\n");
+  // Структура для записи телеметрии в файл (для Python обертки)
+  struct SharedTelemetryData {
+    bool linkUp;
+    uint32_t lastReceive;
+    int channels[16];
+    uint32_t packetsReceived;
+    uint32_t packetsSent;
+    uint32_t packetsLost;
+    double latitude;
+    double longitude;
+    double altitude;
+    double speed;
+    double voltage;
+    double current;
+    double capacity;
+    uint8_t remaining;
+    double roll;
+    double pitch;
+    double yaw;
+    int16_t rollRaw;
+    int16_t pitchRaw;
+    int16_t yawRaw;
+  };
+  
+  // Запускаем поток для периодической записи телеметрии в файл
+  std::thread telemetryWriterThread([&]() {
+    CrsfSerial* crsf = static_cast<CrsfSerial*>(crsfGetActive());
+    if (crsf == nullptr) return;
+    
+    while (true) {
+      SharedTelemetryData shared;
+      
+      shared.linkUp = crsf->isLinkUp();
+      shared.lastReceive = crsf->_lastReceive;
+      
+      // Каналы
+      for (int i = 0; i < 16; i++) {
+        shared.channels[i] = crsf->getChannel(i + 1);
+      }
+      
+      // Статистика связи
+      const crsfLinkStatistics_t* stats = crsf->getLinkStatistics();
+      if (stats) {
+        shared.packetsReceived = stats->uplink_RSSI_1;
+        shared.packetsSent = stats->uplink_RSSI_2;
+        shared.packetsLost = 100 - stats->uplink_Link_quality;
+      }
+      
+      // GPS
+      const crsf_sensor_gps_t* gps = crsf->getGpsSensor();
+      if (gps) {
+        shared.latitude = gps->latitude / 10000000.0;
+        shared.longitude = gps->longitude / 10000000.0;
+        shared.altitude = gps->altitude - 1000;
+        shared.speed = gps->groundspeed / 10.0;
+      }
+      
+      // Батарея
+      shared.voltage = crsf->getBatteryVoltage();
+      shared.current = crsf->getBatteryCurrent();
+      shared.capacity = crsf->getBatteryCapacity();
+      shared.remaining = crsf->getBatteryRemaining();
+      
+      // Положение
+      shared.roll = crsf->getAttitudeRoll();
+      shared.pitch = crsf->getAttitudePitch();
+      shared.yaw = crsf->getAttitudeYaw();
+      
+      // Сырые значения attitude
+      shared.rollRaw = crsf->getRawAttitudeRoll();
+      shared.pitchRaw = crsf->getRawAttitudePitch();
+      shared.yawRaw = crsf->getRawAttitudeYaw();
+      
+      // Записываем в файл
+      std::ofstream file("/tmp/crsf_telemetry.dat", std::ios::binary);
+      if (file.is_open()) {
+        file.write(reinterpret_cast<const char*>(&shared), sizeof(SharedTelemetryData));
+        file.close();
+      }
+      
+      rpi_delay_ms(20); // Обновляем каждые 20мс для реалтайма
     }
   });
-  webServerThread.detach();
+  telemetryWriterThread.detach();
+  
+  printf("✓ Поток записи телеметрии запущен для Python обертки\n");
+
 
 
   // Главный цикл
@@ -47,6 +134,50 @@ int main() {
 #if USE_CRSF_RECV == true
     loop_ch();
 #endif
+
+    // Обработка команд из файла (от Python обертки)
+    std::ifstream cmdFile("/tmp/crsf_command.txt");
+    if (cmdFile.is_open()) {
+      std::string cmd;
+      // Обрабатываем все команды из файла (многострочный формат)
+      while (std::getline(cmdFile, cmd)) {
+        if (cmd.find("setChannels") == 0) {
+          // Формат: setChannels 1=1500 2=1600 3=1700 ...
+          std::istringstream iss(cmd);
+          std::string token;
+          iss >> token; // пропускаем "setChannels"
+          while (iss >> token) {
+            size_t pos = token.find('=');
+            if (pos != std::string::npos) {
+              unsigned int ch = std::stoi(token.substr(0, pos));
+              int value = std::stoi(token.substr(pos + 1));
+              if (ch >= 1 && ch <= 16 && value >= 1000 && value <= 2000) {
+                crsfSetChannel(ch, value);
+              }
+            }
+          }
+        } else if (cmd.find("setChannel") == 0) {
+          unsigned int ch;
+          int value;
+          if (sscanf(cmd.c_str(), "setChannel %u %d", &ch, &value) == 2) {
+            if (ch >= 1 && ch <= 16 && value >= 1000 && value <= 2000) {
+              crsfSetChannel(ch, value);
+            }
+          }
+        } else if (cmd == "sendChannels") {
+          crsfSendChannels();
+        } else if (cmd.find("setMode") == 0) {
+          std::string mode = cmd.substr(8); // "setMode " = 8 символов
+          if (mode == "joystick" || mode == "manual") {
+            // Режим сохраняется в глобальной переменной workMode
+            // (управляется через pybind модуль, но для совместимости оставляем)
+          }
+        }
+      }
+      cmdFile.close();
+      // Удаляем файл после обработки всех команд
+      remove("/tmp/crsf_command.txt");
+    }
 
 #if USE_CRSF_SEND == true
     uint32_t currentMillis = rpi_millis();

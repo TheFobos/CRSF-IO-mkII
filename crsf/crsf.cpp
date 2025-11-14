@@ -38,7 +38,8 @@ void crsfSendChannels()
   crsf->packetChannelsSend(); // Используем указатель на активный порт
 }
 
-void* crsfGetActive()
+// Экспортируем как extern "C" для загрузки через ctypes
+extern "C" void* crsfGetActive()
 {
   return (void*)crsf; // Возвращаем указатель на активный CRSF объект
 }

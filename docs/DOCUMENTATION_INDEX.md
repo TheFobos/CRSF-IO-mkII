@@ -31,7 +31,7 @@
 
 - **[crsf_README.md](crsf_README.md)** - CRSF протокол
   - Описание CRSF модуля
-  - API для работы с протоколом
+  - Python bindings для работы с протоколом
   - Логика переключения портов
   - Структуры данных
 
@@ -63,23 +63,46 @@
 
 - **[python_README.md](python_README.md)** - Python утилиты
   - UART тест, GUI интерфейс, демо
-  - Примеры использования API
+  - Примеры использования Python bindings
   - Установка зависимостей
   - Отладка и логирование
 
-### 🔌 API и управление
+### 🐍 Python интеграция и управление
 
-- **[API_README.md](API_README.md)** - REST API документация
-  - Полное описание всех endpoints
-  - Примеры команд и ответов
+- **[PYTHON_BINDINGS_README.md](PYTHON_BINDINGS_README.md)** - Подробное руководство по Python bindings
+  - Полное описание всех методов
+  - Примеры получения телеметрии
   - Управление режимами и каналами
-  - Безопасность и рекомендации
+  - Обработка ошибок и API Reference
 
-- **[MANUAL_MODE_GUIDE.md](MANUAL_MODE_GUIDE.md)** - Руководство по ручному режиму
+- **[MANUAL_MODE_GUIDE.md](MANUAL_MODE_GUIDE.md)** - Руководство по ручному режиму через Python
   - Подробные инструкции
-  - Примеры команд
+  - Примеры Python кода
   - Безопасные последовательности
   - Тестирование каналов
+
+### 🧪 Тестирование
+
+- **[unit/README.md](../unit/README.md)** - Unit-тесты
+  - Полное описание всех 86 тестов
+  - Структура тестов (базовые и расширенные)
+  - Инструкции по сборке и запуску
+  - Описание покрытия тестами
+  - Статус: ✅ Все 86 тестов успешно пройдены
+
+### 🐍 Python интеграция
+
+- **[PYTHON_BINDINGS_README.md](PYTHON_BINDINGS_README.md)** - Подробное руководство по Python bindings
+  - Полное описание всех методов и возможностей
+  - Примеры использования
+  - API Reference
+  - Обработка ошибок
+
+- **[pybind/README.md](../pybind/README.md)** - Python bindings (pybind11) - базовая документация
+  - Сборка pybind11 модуля
+  - Использование CRSFWrapper
+  - Примеры интеграции с Python приложениями
+  - Автоматическая инициализация
 
 ### 🛠️ Утилиты
 
@@ -109,8 +132,8 @@ make install-deps
 # Запуск основного приложения
 sudo ./crsf_io_rpi
 
-# Проверка статуса
-curl "http://localhost:8081/api/telemetry" | jq
+# Проверка статуса через Python
+python3 -c "from crsf_wrapper import CRSFWrapper; c = CRSFWrapper(); c.auto_init(); print(c.get_telemetry())"
 ```
 
 ### 3. Веб-интерфейс
@@ -122,13 +145,14 @@ http://localhost:8081
 
 ### 4. Управление каналами
 
-```bash
-# Установка всех каналов (CH1=1100, CH16=1160)
-./set_all_channels.sh
+```python
+from crsf_wrapper import CRSFWrapper
 
-# Ручное управление
-curl "http://localhost:8081/api/command?cmd=setMode&value=manual"
-curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1800"
+crsf = CRSFWrapper()
+crsf.auto_init()
+crsf.set_work_mode("manual")
+crsf.set_channel(1, 1800)
+crsf.send_channels()
 ```
 
 ## 📖 Структура чтения документации
@@ -136,15 +160,18 @@ curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1800"
 ### Для новичков
 
 1. **[README.md](../README.md)** - Общее понимание проекта
-2. **[API_README.md](API_README.md)** - Основы API
+2. **[PYTHON_BINDINGS_README.md](PYTHON_BINDINGS_README.md)** - Основы Python bindings
 3. **[MANUAL_MODE_GUIDE.md](MANUAL_MODE_GUIDE.md)** - Практические примеры
 
 ### Для разработчиков
 
 1. **[CONFIG_README.md](CONFIG_README.md)** - Настройка системы
 2. **[MAKEFILE_README.md](MAKEFILE_README.md)** - Сборка проекта
-3. **[libs_README.md](libs_README.md)** - Библиотеки и API
+3. **[libs_README.md](libs_README.md)** - Библиотеки
 4. **[crsf_README.md](crsf_README.md)** - CRSF протокол
+5. **[PYTHON_BINDINGS_README.md](PYTHON_BINDINGS_README.md)** - Python bindings API
+6. **[unit/README.md](../unit/README.md)** - Unit-тесты и тестирование
+7. **[pybind/README.md](../pybind/README.md)** - Python bindings базовая документация
 
 ### Для системных администраторов
 
@@ -162,7 +189,7 @@ curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1800"
 
 ### По функциональности
 
-- **Управление дроном**: [crsf_README.md](crsf_README.md), [API_README.md](API_README.md)
+- **Управление дроном**: [crsf_README.md](crsf_README.md), [PYTHON_BINDINGS_README.md](PYTHON_BINDINGS_README.md)
 - **Веб-интерфейс**: [README_telemetry.md](README_telemetry.md), [web_README.md](web_README.md)
 - **Настройка**: [CONFIG_README.md](CONFIG_README.md), [rpi_README.md](rpi_README.md)
 - **Сборка**: [MAKEFILE_README.md](MAKEFILE_README.md)
@@ -174,15 +201,18 @@ curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1800"
 - **Библиотеки**: [libs_README.md](libs_README.md)
 - **Raspberry Pi**: [rpi_README.md](rpi_README.md)
 - **Python утилиты**: [python_README.md](python_README.md)
+- **Python bindings**: [pybind/README.md](../pybind/README.md)
 - **Веб-интерфейс**: [web_README.md](web_README.md)
+- **Unit-тесты**: [unit/README.md](../unit/README.md)
 
 ### По задачам
 
 - **Установка**: [README.md](../README.md), [MAKEFILE_README.md](MAKEFILE_README.md)
 - **Настройка**: [CONFIG_README.md](CONFIG_README.md)
-- **Использование**: [API_README.md](API_README.md), [MANUAL_MODE_GUIDE.md](MANUAL_MODE_GUIDE.md)
+- **Использование**: [PYTHON_BINDINGS_README.md](PYTHON_BINDINGS_README.md), [MANUAL_MODE_GUIDE.md](MANUAL_MODE_GUIDE.md)
+- **Тестирование**: [unit/README.md](../unit/README.md)
 - **Отладка**: Все README содержат разделы отладки
-- **Разработка**: [MAKEFILE_README.md](MAKEFILE_README.md), [libs_README.md](libs_README.md)
+- **Разработка**: [MAKEFILE_README.md](MAKEFILE_README.md), [libs_README.md](libs_README.md), [pybind/README.md](../pybind/README.md)
 
 ## 📝 Обновление документации
 
@@ -190,8 +220,12 @@ curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1800"
 
 - **config.h** → [CONFIG_README.md](CONFIG_README.md)
 - **Makefile** → [MAKEFILE_README.md](MAKEFILE_README.md)
-- **API endpoints** → [API_README.md](API_README.md)
+- **Python bindings** → [PYTHON_BINDINGS_README.md](PYTHON_BINDINGS_README.md)
 - **Новые модули** → соответствующие README в папках
+- **Тесты** → [unit/README.md](../unit/README.md)
+- **pybind модуль** → [pybind/README.md](../pybind/README.md)
+
+**Статус тестов:** ✅ 86 тестов, все пройдены (последнее обновление: при запуске `unit/run_tests.sh`)
 
 ## 🤝 Вклад в документацию
 

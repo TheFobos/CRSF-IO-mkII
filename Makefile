@@ -1,6 +1,6 @@
 CXX := g++
 CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -Wpedantic -I.
-LDFLAGS := -lpthread
+LDFLAGS := -lpthread -Wl,--export-dynamic
 
 # Исходные файлы
 SRC := \
@@ -10,8 +10,7 @@ SRC := \
 	libs/SerialPort.cpp \
 	libs/rpi_hal.cpp \
 	libs/crsf/crc8.cpp \
-	libs/joystick.cpp \
-	telemetry_server.cpp
+	libs/joystick.cpp
 
 # Объектные файлы
 OBJ := $(SRC:.cpp=.o)

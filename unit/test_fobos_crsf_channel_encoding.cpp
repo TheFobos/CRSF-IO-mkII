@@ -8,7 +8,7 @@
  * - Точность round-trip (encode → decode)
  * - Преобразование CRSF значений (172-1811 → 1000-2000 мкс)
  * 
- * @version CRSF-IO-mkII
+ * @version 4.3
  */
 
 #include <gtest/gtest.h>

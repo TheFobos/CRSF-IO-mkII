@@ -1,44 +1,61 @@
 # Manual Mode Guide
 
-Руководство по использованию ручного режима управления
+Руководство по использованию ручного режима управления через Python bindings
 
 ## Что такое Manual Mode
 
-Ручной режим позволяет программно управлять RC-каналами через API, минуя джойстик. Это полезно для:
+Ручной режим позволяет программно управлять RC-каналами через Python, минуя джойстик. Это полезно для:
 - Автоматизации полетов
 - Тестирования
 - Интеграции с другими системами
 - Сценариев управления
 
+## Установка и инициализация
+
+### Установка модуля
+
+```bash
+cd pybind
+pip install -r requirements.txt
+python3 build_lib.py build_ext --inplace
+```
+
+### Инициализация
+
+```python
+from crsf_wrapper import CRSFWrapper
+
+# Создать экземпляр и инициализировать
+crsf = CRSFWrapper()
+crsf.auto_init()
+```
+
 ## Переключение режимов
 
 ### Режим джойстика (по умолчанию)
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setMode&value=joystick"
+```python
+crsf.set_work_mode("joystick")
 ```
 
-В этом режиме каналы управляются джойстиком.
+В этом режиме каналы управляются джойстиком. Python не может устанавливать каналы.
 
 ### Ручной режим
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setMode&value=manual"
+```python
+crsf.set_work_mode("manual")
 ```
 
-В этом режиме каналы управляются через API команды.
+В этом режиме каналы управляются через Python.
+
+### Проверка текущего режима
+
+```python
+mode = crsf.get_work_mode()
+print(f"Текущий режим: {mode}")  # 'joystick' или 'manual'
+```
 
 ## Управление каналами
-
-### Формат команды
-
-```
-http://localhost:8081/api/command?cmd=setChannel&value=номер=значение
-```
-
-Где:
-- `номер` - номер канала (1-16)
-- `значение` - значение в диапазоне 1000-2000
 
 ### RC Каналы
 
@@ -50,152 +67,246 @@ http://localhost:8081/api/command?cmd=setChannel&value=номер=значени
 | 4 | Yaw | 1000-2000 | 1500 |
 | 5-16 | Aux | 1000-2000 | 1500 |
 
-### Примеры
+**Значения:**
+- `1000` - Минимум/Влево/Вниз
+- `1500` - Центр/Нейтраль
+- `2000` - Максимум/Вправо/Вверх
 
-#### Установка канала в центр
+### Установка одного канала
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1500"
+```python
+# Канал 1 (Roll) в центр
+crsf.set_channel(1, 1500)
+crsf.send_channels()
+
+# Канал 2 (Pitch) минимум
+crsf.set_channel(2, 1000)
+crsf.send_channels()
+
+# Канал 3 (Throttle) максимум
+crsf.set_channel(3, 2000)
+crsf.send_channels()
 ```
 
-#### Roll влево
+### Установка всех каналов одновременно
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1200"
+```python
+# Установить все 16 каналов
+channels = [
+    1500,  # CH1: Roll - центр
+    1500,  # CH2: Pitch - центр
+    1000,  # CH3: Throttle - минимум
+    1500,  # CH4: Yaw - центр
+    1500, 1500, 1500, 1500,  # CH5-8
+    1500, 1500, 1500, 1500,  # CH9-12
+    1500, 1500, 1500, 1500   # CH13-16
+]
+
+crsf.set_channels(channels)
+crsf.send_channels()
 ```
 
-#### Roll вправо
+## Примеры
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1800"
+### Установка канала в центр
+
+```python
+crsf.set_channel(1, 1500)
+crsf.send_channels()
 ```
 
-#### Pitch вниз
+### Roll влево
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setChannel&value=2=1200"
+```python
+crsf.set_channel(1, 1200)
+crsf.send_channels()
 ```
 
-#### Pitch вверх
+### Roll вправо
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setChannel&value=2=1800"
+```python
+crsf.set_channel(1, 1800)
+crsf.send_channels()
 ```
 
-#### Throttle минимум
+### Pitch вниз
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setChannel&value=3=1000"
+```python
+crsf.set_channel(2, 1200)
+crsf.send_channels()
 ```
 
-#### Throttle максимум
+### Pitch вверх
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setChannel&value=3=2000"
+```python
+crsf.set_channel(2, 1800)
+crsf.send_channels()
 ```
 
-#### Yaw влево
+### Throttle минимум
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setChannel&value=4=1300"
+```python
+crsf.set_channel(3, 1000)
+crsf.send_channels()
 ```
 
-#### Yaw вправо
+### Throttle максимум
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setChannel&value=4=1700"
+```python
+crsf.set_channel(3, 2000)
+crsf.send_channels()
+```
+
+### Yaw влево
+
+```python
+crsf.set_channel(4, 1300)
+crsf.send_channels()
+```
+
+### Yaw вправо
+
+```python
+crsf.set_channel(4, 1700)
+crsf.send_channels()
 ```
 
 ## Типичные сценарии
 
 ### 1. Возврат всех каналов в центр
 
-```bash
-curl "http://localhost:8081/api/command?cmd=setMode&value=manual"
-curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1500"
-curl "http://localhost:8081/api/command?cmd=setChannel&value=2=1500"
-curl "http://localhost:8081/api/command?cmd=setChannel&value=3=1000"
-curl "http://localhost:8081/api/command?cmd=setChannel&value=4=1500"
+```python
+from crsf_wrapper import CRSFWrapper
+
+crsf = CRSFWrapper()
+crsf.auto_init()
+crsf.set_work_mode("manual")
+
+# Установить безопасные значения
+crsf.set_channels([1500, 1500, 1000, 1500] + [1500] * 12)
+crsf.send_channels()
 ```
 
 ### 2. Последовательность движений
 
-```bash
-# Право
-curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1800"
-sleep 2
-
-# Центр
-curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1500"
-sleep 1
-
-# Влево
-curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1200"
-sleep 2
-
-# Центр
-curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1500"
-```
-
-### 3. Программное управление (Python)
-
 ```python
-import requests
+from crsf_wrapper import CRSFWrapper
 import time
 
-def set_channel(channel, value):
-    url = f"http://localhost:8081/api/command?cmd=setChannel&value={channel}={value}"
-    requests.get(url)
+crsf = CRSFWrapper()
+crsf.auto_init()
+crsf.set_work_mode("manual")
 
-# Переключиться в ручной режим
-requests.get("http://localhost:8081/api/command?cmd=setMode&value=manual")
-
-# Поворот вправо
-set_channel(1, 1800)
+# Право
+crsf.set_channel(1, 1800)
+crsf.send_channels()
 time.sleep(2)
 
 # Центр
-set_channel(1, 1500)
+crsf.set_channel(1, 1500)
+crsf.send_channels()
 time.sleep(1)
 
-# Поворот влево
-set_channel(1, 1200)
+# Влево
+crsf.set_channel(1, 1200)
+crsf.send_channels()
 time.sleep(2)
 
 # Центр
-set_channel(1, 1500)
-
-# Вернуться к джойстику
-requests.get("http://localhost:8081/api/command?cmd=setMode&value=joystick")
+crsf.set_channel(1, 1500)
+crsf.send_channels()
 ```
 
-### 4. Bash скрипт
+### 3. Плавное изменение канала
 
-```bash
-#!/bin/bash
+```python
+from crsf_wrapper import CRSFWrapper
+import time
 
-API="http://localhost:8081/api/command"
+crsf = CRSFWrapper()
+crsf.auto_init()
+crsf.set_work_mode("manual")
 
-# Переключиться в ручной режим
-curl "$API?cmd=setMode&value=manual"
+# Плавное изменение Roll от минимума к максимуму
+for value in range(1000, 2001, 10):
+    crsf.set_channel(1, value)
+    crsf.send_channels()
+    time.sleep(0.05)  # 50ms задержка
+
+# Вернуть в центр
+crsf.set_channel(1, 1500)
+crsf.send_channels()
+```
+
+### 4. Автоматическое управление на основе телеметрии
+
+```python
+from crsf_wrapper import CRSFWrapper
+import time
+
+crsf = CRSFWrapper()
+crsf.auto_init()
+crsf.set_work_mode("manual")
+
+while True:
+    telemetry = crsf.get_telemetry()
+    
+    # Если батарея разряжена, установить throttle в минимум
+    if telemetry['battery']['voltage'] < 10.0:
+        crsf.set_channel(3, 1000)  # Throttle минимум
+        crsf.send_channels()
+        print("Низкое напряжение! Throttle установлен в минимум")
+    
+    # Если связь потеряна, установить все каналы в безопасные значения
+    if not telemetry['linkUp']:
+        crsf.set_channels([1500, 1500, 1000, 1500] + [1500] * 12)
+        crsf.send_channels()
+        print("Связь потеряна! Безопасный режим активирован")
+    
+    time.sleep(0.1)
+```
+
+### 5. Тестирование всех каналов
+
+```python
+from crsf_wrapper import CRSFWrapper
+import time
+
+crsf = CRSFWrapper()
+crsf.auto_init()
+crsf.set_work_mode("manual")
 
 # Установить все каналы в центр
-for i in {1..16}; do
-  curl "$API?cmd=setChannel&value=$i=1500"
-  sleep 0.05
-done
+crsf.set_channels([1500] * 16)
+crsf.send_channels()
+time.sleep(1)
 
-# Тест Roll
-curl "$API?cmd=setChannel&value=1=1800"
-sleep 2
-curl "$API?cmd=setChannel&value=1=1500"
-sleep 1
-curl "$API?cmd=setChannel&value=1=1200"
-sleep 2
-curl "$API?cmd=setChannel&value=1=1500"
+# Тест каждого канала по очереди
+for channel in range(1, 17):
+    print(f"Тест канала {channel}")
+    
+    # Минимум
+    crsf.set_channel(channel, 1000)
+    crsf.send_channels()
+    time.sleep(0.5)
+    
+    # Центр
+    crsf.set_channel(channel, 1500)
+    crsf.send_channels()
+    time.sleep(0.5)
+    
+    # Максимум
+    crsf.set_channel(channel, 2000)
+    crsf.send_channels()
+    time.sleep(0.5)
+    
+    # Вернуть в центр
+    crsf.set_channel(channel, 1500)
+    crsf.send_channels()
+    time.sleep(0.5)
 
 # Вернуться к джойстику
-curl "$API?cmd=setMode&value=joystick"
+crsf.set_work_mode("joystick")
 ```
 
 ## Безопасность
@@ -208,46 +319,92 @@ curl "$API?cmd=setMode&value=joystick"
 
 ### Рекомендуемая последовательность
 
-```bash
+```python
+from crsf_wrapper import CRSFWrapper
+
+crsf = CRSFWrapper()
+crsf.auto_init()
+
 # 1. Установить безопасные значения
-curl "http://localhost:8081/api/command?cmd=setChannel&value=1=1500"
-curl "http://localhost:8081/api/command?cmd=setChannel&value=2=1500"
-curl "http://localhost:8081/api/command?cmd=setChannel&value=3=1000"  # Throttle минимум
-curl "http://localhost:8081/api/command?cmd=setChannel&value=4=1500"
+crsf.set_channels([1500, 1500, 1000, 1500] + [1500] * 12)
+crsf.send_channels()
 
 # 2. Переключиться в ручной режим
-curl "http://localhost:8081/api/command?cmd=setMode&value=manual"
+crsf.set_work_mode("manual")
 
 # 3. Выполнить операции
+# ... ваш код ...
 
 # 4. Вернуться в режим джойстика
-curl "http://localhost:8081/api/command?cmd=setMode&value=joystick"
+crsf.set_work_mode("joystick")
 ```
 
 ## Проверка текущего режима
 
-```bash
-curl http://localhost:8081/api/telemetry | grep workMode
+```python
+telemetry = crsf.get_telemetry()
+print(f"Режим работы: {telemetry['workMode']}")  # 'joystick' или 'manual'
 ```
 
-Ответ:
-```json
-"workMode": "manual"
-```
-или
-```json
-"workMode": "joystick"
+Или напрямую:
+
+```python
+mode = crsf.get_work_mode()
+print(f"Текущий режим: {mode}")
 ```
 
 ## Частота обновления
 
 - Значения каналов устанавливаются мгновенно
 - Отправка CRSF каналов: 100 Гц (каждые 10 мс)
-- API ответ: немедленный
+- Рекомендуется вызывать `send_channels()` после каждого изменения
+
+## Обработка ошибок
+
+### Проверка инициализации
+
+```python
+from crsf_wrapper import CRSFWrapper
+
+crsf = CRSFWrapper()
+
+try:
+    crsf.auto_init()
+except RuntimeError as e:
+    print(f"Ошибка инициализации: {e}")
+    print("Убедитесь, что crsf_io_rpi запущен")
+    exit(1)
+```
+
+### Валидация параметров
+
+```python
+try:
+    # Неверный номер канала
+    crsf.set_channel(0, 1500)  # ValueError
+except ValueError as e:
+    print(f"Ошибка: {e}")
+
+try:
+    # Неверное значение канала
+    crsf.set_channel(1, 500)  # ValueError
+except ValueError as e:
+    print(f"Ошибка: {e}")
+```
 
 ## Ограничения
 
-- Ручной режим работает только через API
+- Ручной режим работает только через Python bindings
 - Джойстик не реагирует в ручном режиме
 - Значения сохраняются до следующего изменения
 - При потере связи fail-safe срабатывает автоматически
+- Основное приложение (`crsf_io_rpi`) должно быть запущено
+
+## Дополнительные ресурсы
+
+- [Python Bindings Guide](PYTHON_BINDINGS_README.md) - Подробное руководство по pybind11
+- [pybind/README.md](../pybind/README.md) - Базовая документация модуля
+
+---
+
+**Версия:** 4.3

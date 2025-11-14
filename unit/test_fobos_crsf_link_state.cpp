@@ -8,7 +8,7 @@
  * - Автоматический вызов onLinkUp/onLinkDown
  * - Обновление статистики связи
  * 
- * @version CRSF-IO-mkII
+ * @version 4.3
  */
 
 #include <gtest/gtest.h>

@@ -8,7 +8,7 @@
  * - Разные полиномы
  * - Корректность вычислений для типичных CRSF пакетов
  * 
- * @version CRSF-IO-mkII
+ * @version 4.3
  */
 
 #include <gtest/gtest.h>

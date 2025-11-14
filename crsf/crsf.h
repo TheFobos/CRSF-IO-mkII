@@ -14,6 +14,7 @@ void crsfSendChannels();
 void crsfTelemetrySend();
 
 // Получить указатель на активный CRSF объект
-void* crsfGetActive();
+// Экспортируется как extern "C" для загрузки через ctypes
+extern "C" void* crsfGetActive();
 
 #endif

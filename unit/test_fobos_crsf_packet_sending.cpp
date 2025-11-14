@@ -9,7 +9,7 @@
  * - Точность кодирования в packetChannelsSend()
  * - Корректность CRC в отправляемых пакетах
  * 
- * @version CRSF-IO-mkII
+ * @version 4.3
  */
 
 #include <gtest/gtest.h>

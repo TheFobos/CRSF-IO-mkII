@@ -5,7 +5,7 @@
  * CRC8 используется в CRSF протоколе для проверки целостности пакетов.
  * Полином 0xD5 соответствует стандарту CRSF протокола.
  * 
- * @version CRSF-IO-mkII
+ * @version 4.3
  */
 
 #include <gtest/gtest.h>

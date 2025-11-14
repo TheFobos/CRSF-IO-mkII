@@ -8,7 +8,7 @@
  * - Attitude (roll, pitch, yaw с правильной конвертацией)
  * - Link Statistics (RSSI, качество связи)
  * 
- * @version CRSF-IO-mkII
+ * @version 4.3
  */
 
 #include <gtest/gtest.h>
