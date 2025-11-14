@@ -204,8 +204,9 @@ void setChannels(const std::vector<int>& channels) {
 }
 
 // Отправка каналов через файл команд
+// ВАЖНО: используем append режим, чтобы не перезаписать команды setChannel
 void sendChannels() {
-    std::ofstream cmdFile("/tmp/crsf_command.txt");
+    std::ofstream cmdFile("/tmp/crsf_command.txt", std::ios::app);
     if (cmdFile.is_open()) {
         cmdFile << "sendChannels" << std::endl;
         cmdFile.close();

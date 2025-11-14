@@ -45,6 +45,7 @@ int main() {
     bool linkUp;
     uint32_t lastReceive;
     int channels[16];
+    // Статистика связи - отключена (поля оставлены для совместимости)
     uint32_t packetsReceived;
     uint32_t packetsSent;
     uint32_t packetsLost;
@@ -80,13 +81,10 @@ int main() {
         shared.channels[i] = crsf->getChannel(i + 1);
       }
       
-      // Статистика связи
-      const crsfLinkStatistics_t* stats = crsf->getLinkStatistics();
-      if (stats) {
-        shared.packetsReceived = stats->uplink_RSSI_1;
-        shared.packetsSent = stats->uplink_RSSI_2;
-        shared.packetsLost = 100 - stats->uplink_Link_quality;
-      }
+      // Статистика связи - отключена
+      shared.packetsReceived = 0;
+      shared.packetsSent = 0;
+      shared.packetsLost = 0;
       
       // GPS
       const crsf_sensor_gps_t* gps = crsf->getGpsSensor();
